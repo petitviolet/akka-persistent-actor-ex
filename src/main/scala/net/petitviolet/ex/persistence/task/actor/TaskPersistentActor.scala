@@ -12,8 +12,8 @@ class TaskPersistentActor extends PersistentActor {
 
   private var state: State = State()
 
-  private def updateState(event: Event): Unit = {
-    event match {
+  private def updateState(event: CommandEvent): Unit = {
+    persist(event) {
       case Register(title) => state = state + Task(title)
       case Complete(task) => state = state complete task
       case Undo(task) => state = state undo task
@@ -22,13 +22,21 @@ class TaskPersistentActor extends PersistentActor {
     }
   }
 
+  private def executeQuery(event: QueryEvent): Unit = {
+    event match {
+      case GetNotCompleted => sender() ! NotCompletedTasks(state.notCompleted)
+      case GetAllTask => sender() ! AllTasks(state.all)
+    }
+  }
+
   override def receiveRecover: Receive = {
-    case evt: Event                                 => updateState(evt)
+    case evt: CommandEvent                                 => updateState(evt)
     case SnapshotOffer(_, snapshot: State) => state = snapshot
   }
 
   override def receiveCommand: Receive = {
-    case event: Event => updateState(event)
+    case command: CommandEvent => updateState(command)
+    case query: QueryEvent => executeQuery(query)
     case Snapshot  => saveSnapshot(state)
     case Print => println(s"current => $state")
   }
@@ -45,17 +53,29 @@ case object Print extends Command
 /**
   * Event for modify State of Actor
   */
-sealed trait Event
-case class Register(taskTitle: TaskTitle) extends Event
-case class Complete(task: Task) extends Event
-case class Undo(task: Task) extends Event
-case class Archive(task: Task) extends Event
+sealed trait CommandEvent
+case class Register(taskTitle: TaskTitle) extends CommandEvent
+case class Complete(task: Task) extends CommandEvent
+case class Undo(task: Task) extends CommandEvent
+case class Archive(task: Task) extends CommandEvent
+
+sealed trait QueryEvent
+case object GetNotCompleted extends QueryEvent
+case object GetAllTask extends QueryEvent
+
+case class AllTasks(value: Seq[Task])
+case class NotCompletedTasks(value: Seq[Task])
 
 /**
   * State of Actor
   * @param taskList
   */
 case class State(taskList: Seq[Task] = Nil) {
+  def all = taskList
+
+  def notCompleted = taskList.filter { _.state == Todo }
+  def completed = taskList.filter { _.state == Completed }
+
   def +(task: Task): State = copy(task +: taskList)
 
   def -(task: Task): State = copy(taskList.filterNot(_ == task))

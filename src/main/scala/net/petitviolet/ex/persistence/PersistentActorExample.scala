@@ -3,6 +3,7 @@ package net.petitviolet.ex.persistence
 //#persistent-actor-example
 import akka.actor._
 import akka.persistence._
+import net.petitviolet.ex.persistence.task.actor.GetNotCompleted
 
 private sealed trait Command
 private case object Snapshot extends Command
@@ -68,7 +69,7 @@ object PersistentActorExample extends App {
   persistentActor ! ChangeCountCommand(-2)
   persistentActor ! Snapshot
   persistentActor ! ChangeCountCommand(5)
-  persistentActor ! Print
+  persistentActor ! GetNotCompleted
 
   Thread.sleep(1000)
   system.terminate()
