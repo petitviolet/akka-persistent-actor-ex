@@ -73,16 +73,16 @@ case class NotCompletedTasks(value: Seq[Task])
 case class State(taskList: Seq[Task] = Nil) {
   def all = taskList
 
-  def notCompleted = taskList.filter { _.state == Todo }
-  def completed = taskList.filter { _.state == Completed }
+  def notCompleted = taskList.filter { _.state == TaskState.Todo }
+  def completed = taskList.filter { _.state == TaskState.Completed }
 
   def +(task: Task): State = copy(task +: taskList)
 
   def -(task: Task): State = copy(taskList.filterNot(_ == task))
 
-  def complete(task: Task): State = modifyState(_.copy(state = Completed))(task)
+  def complete(task: Task): State = modifyState(_.copy(state = TaskState.Completed))(task)
 
-  def undo(task: Task): State = modifyState(_.copy(state = Todo))(task)
+  def undo(task: Task): State = modifyState(_.copy(state = TaskState.Todo))(task)
 
   private def modifyState(f: => Task => Task)(task: Task) =
     copy(taskList.map { t =>
