@@ -3,25 +3,25 @@ package net.petitviolet.ex.persistence.task.web
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.ExecutionContext
 
-trait Context {
+trait AppContext {
   implicit val system: ActorSystem
-  implicit val executor: ExecutionContextExecutor
+  implicit val executor: ExecutionContext
   implicit val materializer: ActorMaterializer
 
-  private[application] def shutdown() = system.terminate()
+  def shutdown() = system.terminate()
 }
 
-trait UsesContext {
-  val context: Context
+trait UsesAppContext {
+  val appContext: AppContext
 }
 
-trait MixInContext {
-  implicit val context: Context = ContextImpl
+trait MixInAppContext {
+  implicit val appContext: AppContext = ContextImpl
 }
 
-object ContextImpl extends Context {
+private object ContextImpl extends AppContext {
   implicit val system = ActorSystem()
   implicit val executor = system.dispatcher
   implicit val materializer = ActorMaterializer()
