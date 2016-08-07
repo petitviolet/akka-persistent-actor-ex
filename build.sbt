@@ -4,10 +4,16 @@ version := "2.4.4"
 
 scalaVersion := "2.11.7"
 
+val akkaVersion = "2.4.9-RC2"
+
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.4.4",
-  "com.typesafe.akka" %% "akka-persistence" % "2.4.4",
-  "com.typesafe.akka" %% "akka-persistence-query-experimental" % "2.4.4",
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaVersion,
+
   "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.1",
 //  "com.github.dnvriend" %% "akka-persistence-inmemory" % "1.2.8",
   "org.iq80.leveldb"            % "leveldb"          % "0.7",
