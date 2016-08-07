@@ -2,7 +2,7 @@ name := """akka-actor-persistence-ex"""
 
 version := "2.4.4"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 val akkaVersion = "2.4.9-RC2"
 
