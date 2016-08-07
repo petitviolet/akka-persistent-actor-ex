@@ -9,8 +9,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
 trait Controller {
-  implicit val context: Context
-  protected implicit val ec: ExecutionContext = context.executor
+//  implicit val context: Context
+//  protected implicit val ec: ExecutionContext = context.executor
   val route: Route
 }
 

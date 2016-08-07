@@ -1,9 +1,13 @@
 package net.petitviolet.ex.persistence.task
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Route
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model._
+import net.petitviolet.ex.persistence.task.web.{MixInAppContext, TaskController}
 
+import scala.io.StdIn
 import scala.util.Random
 
 object TaskApp extends App {
@@ -45,3 +49,25 @@ private class TaskAppActor extends Actor {
 }
 
 private case object Execute
+
+private object TaskWebApp extends App with MixInAppContext {
+  import appContext._
+
+  val route = new TaskController().route
+  val (host, port) = ("localhost", 9000)
+
+  val binding = Http().bindAndHandle(
+    Route.handlerFlow(route),
+    host,
+    port
+  )
+
+  println("start")
+
+  StdIn.readLine()
+
+  binding.flatMap(_.unbind())
+  println("end")
+
+  appContext.shutdown()
+}
