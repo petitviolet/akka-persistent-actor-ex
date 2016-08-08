@@ -27,5 +27,3 @@ private object ContextImpl extends AppContext {
   implicit val materializer = ActorMaterializer()
 }
 
-
-

@@ -22,7 +22,7 @@ private case class CountState(events: Seq[Int] = Seq.empty) extends State {
   }
 
   private def updatedInc(evt: IncreaseEvent): CountState = copy(evt.data +: events)
-  private def updatedDec(evt: DecreaseEvent): CountState = copy(- evt.data +: events)
+  private def updatedDec(evt: DecreaseEvent): CountState = copy(-evt.data +: events)
 
   def size: Int = events.length
 
@@ -42,7 +42,7 @@ class ExamplePersistentActor extends PersistentActor {
   def numEvents = state.size
 
   val receiveRecover: Receive = {
-    case evt: Event                                 => updateState(evt)
+    case evt: Event                             => updateState(evt)
     case SnapshotOffer(_, snapshot: CountState) => state = snapshot
   }
 
@@ -52,8 +52,8 @@ class ExamplePersistentActor extends PersistentActor {
         if (num >= 0) IncreaseEvent(num)
         else DecreaseEvent(-num)
       persist(event)(updateState)
-    case Snapshot  => saveSnapshot(state)
-    case Print => println(state.state)
+    case Snapshot => saveSnapshot(state)
+    case Print    => println(state.state)
   }
 
 }

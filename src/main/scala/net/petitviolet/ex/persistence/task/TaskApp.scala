@@ -1,11 +1,11 @@
 package net.petitviolet.ex.persistence.task
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model._
-import net.petitviolet.ex.persistence.task.web.{MixInAppContext, TaskController}
+import net.petitviolet.ex.persistence.task.web.{ MixInAppContext, TaskController }
 
 import scala.io.StdIn
 import scala.util.Random
@@ -31,19 +31,19 @@ private class TaskAppActor extends Actor {
     taskActor ! Register(titles(1))
     taskActor ! Register(titles(2))
     taskActor ! Complete(Task(titles(1)))
-//  taskActor ! Complete(Task(titles(2)))
-//  taskActor ! Undo(Task(titles(1)))
+    //  taskActor ! Complete(Task(titles(2)))
+    //  taskActor ! Undo(Task(titles(1)))
     taskActor ! Archive(Task(titles(0)))
     taskActor ! GetNotCompleted
     taskActor ! GetAllTask
 
-//    taskActor ! Print
-//    taskActor ! Snapshot
+    //    taskActor ! Print
+    //    taskActor ! Snapshot
   }
 
   override def receive: Receive = {
-    case Execute => execute()
-    case AllTasks(value) => println(s"\nAll TaskList: $value\n")
+    case Execute                  => execute()
+    case AllTasks(value)          => println(s"\nAll TaskList: $value\n")
     case NotCompletedTasks(value) => println(s"\nNotCompleted TaskList: $value\n")
   }
 }

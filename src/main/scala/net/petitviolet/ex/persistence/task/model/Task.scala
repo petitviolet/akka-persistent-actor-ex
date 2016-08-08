@@ -17,7 +17,6 @@ object TaskState {
   case object Todo extends TaskState(0)
 }
 
-
 object TaskJsonSupport extends DefaultJsonProtocol {
   implicit val taskJsonFormat: RootJsonFormat[Task] = new RootJsonFormat[Task] {
     override def write(obj: Task): JsValue = JsObject(
@@ -26,10 +25,10 @@ object TaskJsonSupport extends DefaultJsonProtocol {
     )
 
     override def read(json: JsValue): Task =
-    json.asJsObject.getFields("title", "state") match {
-      case Seq(JsString(title), JsNumber(state)) =>
-        Task(TaskTitle(title), TaskState.from(state.toInt))
-      case _ => throw new DeserializationException("Task")
-    }
+      json.asJsObject.getFields("title", "state") match {
+        case Seq(JsString(title), JsNumber(state)) =>
+          Task(TaskTitle(title), TaskState.from(state.toInt))
+        case _ => throw new DeserializationException("Task")
+      }
   }
 }

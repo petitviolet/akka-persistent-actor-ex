@@ -1,7 +1,7 @@
 package net.petitviolet.ex.persistence.task.actor
 
 import akka.actor.Props
-import akka.persistence.{PersistentActor, SnapshotOffer}
+import akka.persistence.{ PersistentActor, SnapshotOffer }
 import net.petitviolet.ex.persistence.task.model._
 
 object TaskPersistentActor {
@@ -15,44 +15,44 @@ class TaskPersistentActor extends PersistentActor {
   private def updateState(event: CommandEvent): Unit = {
     persist(event) {
       case Register(title) => state = state + Task(title)
-      case Complete(task) => state = state complete task
-      case Undo(task) => state = state undo task
-      case Archive(task) => state = state - task
-      case _ => sys.error("Invalid Message")
+      case Complete(task)  => state = state complete task
+      case Undo(task)      => state = state undo task
+      case Archive(task)   => state = state - task
+      case _               => sys.error("Invalid Message")
     }
   }
 
   private def executeQuery(event: QueryEvent): Unit = {
     event match {
       case GetNotCompleted => sender() ! NotCompletedTasks(state.notCompleted)
-      case GetAllTask => sender() ! AllTasks(state.all)
+      case GetAllTask      => sender() ! AllTasks(state.all)
     }
   }
 
   override def receiveRecover: Receive = {
-    case evt: CommandEvent                                 => updateState(evt)
+    case evt: CommandEvent                 => updateState(evt)
     case SnapshotOffer(_, snapshot: State) => state = snapshot
   }
 
   override def receiveCommand: Receive = {
     case command: CommandEvent => updateState(command)
-    case query: QueryEvent => executeQuery(query)
-    case Snapshot  => saveSnapshot(state)
-    case Print => println(s"current => $state")
+    case query: QueryEvent     => executeQuery(query)
+    case Snapshot              => saveSnapshot(state)
+    case Print                 => println(s"current => $state")
   }
 
 }
 
 /**
-  * Command to invoke some action on Actor
-  */
+ * Command to invoke some action on Actor
+ */
 sealed trait Command
 case object Snapshot extends Command
 case object Print extends Command
 
 /**
-  * Event for modify State of Actor
-  */
+ * Event for modify State of Actor
+ */
 sealed trait CommandEvent
 case class Register(taskTitle: TaskTitle) extends CommandEvent
 case class Complete(task: Task) extends CommandEvent
@@ -67,9 +67,9 @@ case class AllTasks(value: Seq[Task])
 case class NotCompletedTasks(value: Seq[Task])
 
 /**
-  * State of Actor
-  * @param taskList
-  */
+ * State of Actor
+ * @param taskList
+ */
 case class State(taskList: Seq[Task] = Nil) {
   def all = taskList
 
@@ -86,7 +86,7 @@ case class State(taskList: Seq[Task] = Nil) {
 
   private def modifyState(f: => Task => Task)(task: Task) =
     copy(taskList.map { t =>
-    if (t == task) f(t)
-    else t
-  })
+      if (t == task) f(t)
+      else t
+    })
 }
