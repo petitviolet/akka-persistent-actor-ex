@@ -1,15 +1,15 @@
-package net.petitviolet.ex.persistence
+package net.petitviolet.ex.persistence.practice
 
 import akka.actor._
 import akka.persistence._
 
 object SnapshotExample extends App {
-  final case class ExampleState(received: List[String] = Nil) {
+  final private case class ExampleState(received: List[String] = Nil) {
     def updated(s: String): ExampleState = copy(s :: received)
     override def toString = received.reverse.toString
   }
 
-  class ExamplePersistentActor extends PersistentActor {
+  private class ExamplePersistentActor extends PersistentActor {
     def persistenceId: String = "sample-id-3"
 
     var state = ExampleState()

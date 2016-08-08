@@ -1,10 +1,10 @@
-package net.petitviolet.ex.persistence
+package net.petitviolet.ex.persistence.practice
 
 import akka.actor._
 import akka.persistence._
 
 object PersistentActorFailureExample extends App {
-  class ExamplePersistentActor extends PersistentActor {
+  private class ExamplePersistentActor extends PersistentActor {
     override def persistenceId = "sample-id-2"
 
     var received: List[String] = Nil // state

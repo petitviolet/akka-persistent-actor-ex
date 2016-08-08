@@ -1,4 +1,4 @@
-package net.petitviolet.ex.persistence
+package net.petitviolet.ex.persistence.practice
 
 //#persistent-actor-example
 import akka.actor._
@@ -31,7 +31,7 @@ private case class CountState(events: Seq[Int] = Seq.empty) extends State {
   override def toString: String = events.reverse.toString
 }
 
-class ExamplePersistentActor extends PersistentActor {
+private class ExamplePersistentActor extends PersistentActor {
   override def persistenceId = "example-id"
 
   private var state = CountState()
