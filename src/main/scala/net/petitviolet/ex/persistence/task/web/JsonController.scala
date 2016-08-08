@@ -14,7 +14,7 @@ trait Controller {
   val route: Route
 }
 
-trait JsonController extends Controller with SprayJsonSupport {
+trait JsonController extends Controller with SprayJsonSupport with UsesAppContext {
   protected def completeFuture[A](resultFuture: Future[A])(implicit marshaller: ToResponseMarshaller[A]) =
     onSuccess(resultFuture) { result =>
       complete(result)
