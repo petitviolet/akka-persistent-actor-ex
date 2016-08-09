@@ -7,6 +7,7 @@ import net.petitviolet.ex.persistence.task.model._
 object TaskPersistentActor {
   def props = Props[TaskPersistentActor]
 }
+
 class TaskPersistentActor extends PersistentActor {
   override def persistenceId: String = "task_list"
 
