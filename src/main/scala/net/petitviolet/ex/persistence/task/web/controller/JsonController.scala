@@ -1,11 +1,11 @@
-package net.petitviolet.ex.persistence.task.web
+package net.petitviolet.ex.persistence.task.web.controller
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.marshalling.ToResponseMarshaller
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 import scala.language.implicitConversions
 
 trait Controller {

@@ -1,21 +1,21 @@
-package net.petitviolet.ex.persistence.task.web
+package net.petitviolet.ex.persistence.task.web.controller
 
-import akka.actor.{ ActorRef, Props, Actor }
-import akka.actor.Actor.Receive
+import akka.actor.ActorRef
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.pattern.ask
-import net.petitviolet.ex.persistence.task.actor.{ Register, AllTasks, GetAllTask, TaskPersistentActor }
+import net.petitviolet.ex.persistence.task.actor.{ AllTasks, GetAllTask, Register, TaskPersistentActor }
 import net.petitviolet.ex.persistence.task.model.TaskJsonSupport._
-import net.petitviolet.ex.persistence.task.model.{ TaskTitle, Task }
-import spray.json.{ RootJsonFormat, DefaultJsonProtocol }
+import net.petitviolet.ex.persistence.task.model.TaskTitle
+import net.petitviolet.ex.persistence.task.web.{ MixInAppContext, UsesAppContext }
+import spray.json.{ DefaultJsonProtocol, RootJsonFormat }
 
-import scala.concurrent.{ Promise, Future }
+import scala.concurrent.Promise
 import scala.language.postfixOps
 
 trait WithTimeout {
-  import scala.concurrent.duration._
   import akka.util.Timeout
+
+  import scala.concurrent.duration._
   protected implicit val timeout = Timeout(1 second)
 }
 
@@ -47,9 +47,8 @@ trait GetTaskController extends JsonController with UsesTaskActor with WithTimeo
 }
 
 trait RegisterTaskController extends JsonController with WithTimeout with UsesTaskActor with UsesAppContext {
-  import appContext._
-  import ResultJsonSupport._
   import RegisterTaskDTOJsonSupport._
+  import ResultJsonSupport._
 
   override val route: Route = (path("task" / "new") & post) {
     entity(as[RegisterTaskDTO]) { dto =>

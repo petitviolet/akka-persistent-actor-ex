@@ -1,10 +1,10 @@
-package net.petitviolet.ex.persistence.task
+package net.petitviolet.ex.persistence.task.web
 
 import akka.actor.{ Actor, Props }
 
 import scala.concurrent.Promise
 
-package object web {
+package object controller {
 
   object ResponseActor {
     def props[T](promise: Promise[T]) = Props(classOf[ResponseActor[T]], promise)
