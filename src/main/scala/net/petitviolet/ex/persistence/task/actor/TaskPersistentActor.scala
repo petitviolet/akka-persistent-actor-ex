@@ -64,18 +64,18 @@ case object Print extends Command
 /**
  * Event for modify State of Actor
  */
-sealed trait CommandEvent
-case class Register(taskTitle: TaskTitle) extends CommandEvent
-case class Complete(task: Task) extends CommandEvent
-case class Undo(task: Task) extends CommandEvent
-case class Archive(task: Task) extends CommandEvent
+sealed trait CommandEvent extends Any
+case class Register(taskTitle: TaskTitle) extends AnyVal with CommandEvent
+case class Complete(task: Task) extends AnyVal with CommandEvent
+case class Undo(task: Task) extends AnyVal with CommandEvent
+case class Archive(task: Task) extends AnyVal with CommandEvent
 
 sealed trait QueryEvent
 case object GetNotCompleted extends QueryEvent
 case object GetAllTask extends QueryEvent
 
-case class AllTasks(value: Seq[Task])
-case class NotCompletedTasks(value: Seq[Task])
+case class AllTasks(value: Seq[Task]) extends AnyVal
+case class NotCompletedTasks(value: Seq[Task]) extends AnyVal
 
 /**
  * State of Actor
@@ -85,6 +85,7 @@ case class State(taskList: Seq[Task] = Nil) {
   def all = taskList
 
   def notCompleted = taskList.filter { _.state == TaskState.Todo }
+
   def completed = taskList.filter { _.state == TaskState.Completed }
 
   def +(task: Task): State = copy(task +: taskList)
