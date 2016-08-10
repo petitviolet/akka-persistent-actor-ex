@@ -13,6 +13,11 @@ class TaskPersistentActor extends PersistentActor {
 
   private var state: State = State()
 
+  /**
+   * API for update state
+   * this event should be persisted
+   * @param event
+   */
   private def updateState(event: CommandEvent): Unit = {
     persist(event) {
       case Register(title) => state = state + Task(title)
@@ -23,6 +28,11 @@ class TaskPersistentActor extends PersistentActor {
     }
   }
 
+  /**
+   * API for finding records in state
+   * this event should not be persisted
+   * @param event
+   */
   private def executeQuery(event: QueryEvent): Unit = {
     event match {
       case GetNotCompleted => sender() ! NotCompletedTasks(state.notCompleted)
