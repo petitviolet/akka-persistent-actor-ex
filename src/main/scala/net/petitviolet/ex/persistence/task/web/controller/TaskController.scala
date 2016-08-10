@@ -22,6 +22,7 @@ trait WithTimeout {
 class TaskController extends JsonController
   with MixInAppContext {
 
+  // I wonder what is the best way to pass actor to child controllers...?
   val taskActor: ActorRef = appContext.system.actorOf(TaskPersistentActor.props)
 
   private class GetTaskControllerImpl(actorRef: ActorRef) extends GetTaskController(actorRef) with MixInAppContext
