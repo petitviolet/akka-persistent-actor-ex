@@ -52,7 +52,6 @@ object TaskApp extends App {
   system.terminate()
 }
 
-
 private object TaskWebApp extends App with MixInAppContext {
   import appContext._
 

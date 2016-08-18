@@ -3,7 +3,7 @@ package net.petitviolet.ex.persistence.task.web.controller
 import akka.actor.ActorRef
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import net.petitviolet.ex.persistence.task.actor.{ AllTasks, GetAllTask, Register, TaskPersistentActor }
+import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model.TaskJsonSupport._
 import net.petitviolet.ex.persistence.task.model.TaskTitle
 import net.petitviolet.ex.persistence.task.web.{ MixInAppContext, UsesAppContext }
@@ -26,11 +26,11 @@ class TaskController extends JsonController
   val taskActor: ActorRef = appContext.system.actorOf(TaskPersistentActor.props)
 
   private class GetTaskControllerImpl(actorRef: ActorRef) extends GetTaskController(actorRef) with MixInAppContext
-  private class RegisterTaskControllerImpl(actorRef: ActorRef) extends RegisterTaskController(actorRef) with MixInAppContext
+  private class CommandTaskControllerImpl(actorRef: ActorRef) extends CommandTaskController(actorRef) with MixInAppContext
 
   override val route: Route =
     new GetTaskControllerImpl(taskActor).route ~
-      new RegisterTaskControllerImpl(taskActor).route
+      new CommandTaskControllerImpl(taskActor).route
 }
 
 abstract class GetTaskController(taskActor: ActorRef) extends JsonController with WithTimeout with UsesAppContext {
@@ -46,24 +46,40 @@ abstract class GetTaskController(taskActor: ActorRef) extends JsonController wit
 
 }
 
-abstract class RegisterTaskController(taskActor: ActorRef) extends JsonController with WithTimeout with UsesAppContext {
+abstract class CommandTaskController(taskActor: ActorRef) extends JsonController with WithTimeout with UsesAppContext {
   import RegisterTaskDTOJsonSupport._
   import ResultJsonSupport._
 
-  override val route: Route = (path("task" / "new") & post) {
-    entity(as[RegisterTaskDTO]) { dto =>
-      taskActor ! Register(TaskTitle(dto.title))
-      complete(Result("ok"))
-    }
+  // should separate each Controller...
+  private val commandMap: Map[String, (TaskTitle => CommandEvent)] = Map(
+    "new" -> Register.apply,
+    "done" -> Complete.apply,
+    "undo" -> Undo.apply,
+    "delete" -> Archive.apply
+  )
+
+  private val _routes = commandMap map {
+    case (_path, constructor) =>
+      entity(as[TaskTitleDTO]) { dto =>
+        (path(_path) & post) { // should use RESTful HTTP-method...
+          val event: CommandEvent = constructor(TaskTitle(dto.title))
+          taskActor ! event
+          complete(Result("ok"))
+        }
+      }
+  }
+
+  override val route: Route = pathPrefix("task") {
+    _routes.reduce { _ ~ _ }
   }
 
 }
 
-private case class RegisterTaskDTO(title: String)
+private case class TaskTitleDTO(title: String)
 private case class Result(result: String)
 
 private object RegisterTaskDTOJsonSupport extends DefaultJsonProtocol {
-  implicit val registerTaskFormat: RootJsonFormat[RegisterTaskDTO] = jsonFormat1(RegisterTaskDTO)
+  implicit val registerTaskFormat: RootJsonFormat[TaskTitleDTO] = jsonFormat1(TaskTitleDTO)
 }
 
 private object ResultJsonSupport extends DefaultJsonProtocol {
