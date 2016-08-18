@@ -1,75 +1,57 @@
 package net.petitviolet.ex.persistence.practice
 
-//#persistent-actor-example
 import akka.actor._
 import akka.persistence._
-import net.petitviolet.ex.persistence.task.actor.GetNotCompleted
 
-private sealed trait Command
-private case object Snapshot extends Command
-private case object Print extends Command
-private case class ChangeCountCommand(data: Int) extends Command
+// commands
+private sealed trait MyCommand
+private case object MySnapshot extends MyCommand
+private case object MyPrint extends MyCommand
+private case class AppendCommand(data: Int) extends MyCommand
 
-private sealed trait Event
-private case class IncreaseEvent(data: Int) extends Event
-private case class DecreaseEvent(data: Int) extends Event
+// states
+private case class MyState(events: Seq[Int] = Seq.empty) {
+  def updated(evt: AppendCommand) = copy(evt.data +: events)
 
-private sealed trait State
-private case class CountState(events: Seq[Int] = Seq.empty) extends State {
-  def updated(evt: Event) = evt match {
-    case e: IncreaseEvent => updatedInc(e)
-    case e: DecreaseEvent => updatedDec(e)
-  }
+  def state = toString
 
-  private def updatedInc(evt: IncreaseEvent): CountState = copy(evt.data +: events)
-  private def updatedDec(evt: DecreaseEvent): CountState = copy(-evt.data +: events)
-
-  def size: Int = events.length
-
-  def state = events.sum
-
-  override def toString: String = events.reverse.toString
+  override def toString: String = events.reverse.mkString(" :: ")
 }
 
 private class ExamplePersistentActor extends PersistentActor {
   override def persistenceId = "example-id"
 
-  private var state = CountState()
+  private var state = MyState()
 
-  def updateState(event: Event): Unit =
-    state = state.updated(event)
-
-  def numEvents = state.size
-
-  val receiveRecover: Receive = {
-    case evt: Event                             => updateState(evt)
-    case SnapshotOffer(_, snapshot: CountState) => state = snapshot
+  override def receiveRecover: Receive = {
+    case command: AppendCommand =>
+      println(s"command: $command")
+      state = state.updated(command)
+    case SnapshotOffer(_, snapshot: MyState) =>
+      state = snapshot
+    case default => println(s"default: $default")
   }
 
-  val receiveCommand: Receive = {
-    case ChangeCountCommand(num) =>
-      val event: Event =
-        if (num >= 0) IncreaseEvent(num)
-        else DecreaseEvent(-num)
-      persist(event)(updateState)
-    case Snapshot => saveSnapshot(state)
-    case Print    => println(state.state)
+  override def receiveCommand: Receive = {
+    case command: AppendCommand =>
+      persist(command) { _command =>
+        state = state.updated(_command)
+      }
+    case MySnapshot => saveSnapshot(state)
+    case MyPrint    => println(state.state)
   }
 
 }
-//#persistent-actor-example
 
 object PersistentActorExample extends App {
 
   val system = ActorSystem("PersistentActorExample")
-  val persistentActor = system.actorOf(Props[ExamplePersistentActor], "persistentActor-4-scala")
+  val persistentActor = system.actorOf(Props[ExamplePersistentActor], "my-example")
 
-  persistentActor ! ChangeCountCommand(-1)
-  persistentActor ! ChangeCountCommand(8)
-  persistentActor ! ChangeCountCommand(-2)
-  persistentActor ! Snapshot
-  persistentActor ! ChangeCountCommand(5)
-  persistentActor ! GetNotCompleted
+  persistentActor ! AppendCommand(-1)
+  persistentActor ! MySnapshot
+  persistentActor ! AppendCommand(3)
+  persistentActor ! MyPrint
 
   Thread.sleep(1000)
   system.terminate()
