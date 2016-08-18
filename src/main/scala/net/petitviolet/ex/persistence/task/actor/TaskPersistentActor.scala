@@ -1,6 +1,6 @@
 package net.petitviolet.ex.persistence.task.actor
 
-import akka.actor.Props
+import akka.actor.{ ActorLogging, Props }
 import akka.persistence.{ PersistentActor, SnapshotOffer }
 import net.petitviolet.ex.persistence.task.model._
 
@@ -8,7 +8,7 @@ object TaskPersistentActor {
   def props = Props[TaskPersistentActor]
 }
 
-class TaskPersistentActor extends PersistentActor {
+class TaskPersistentActor extends PersistentActor with ActorLogging {
   override def persistenceId: String = "task_list"
 
   private var state: State = State()
@@ -16,6 +16,7 @@ class TaskPersistentActor extends PersistentActor {
   /**
    * API for update state
    * this event should be persisted
+   *
    * @param event
    */
   private def updateState(event: CommandEvent): Unit = {
@@ -31,9 +32,11 @@ class TaskPersistentActor extends PersistentActor {
   /**
    * API for finding records in state
    * this event should not be persisted
+   *
    * @param event
    */
   private def executeQuery(event: QueryEvent): Unit = {
+    if (recoveryRunning) log.info("now recovering")
     event match {
       case GetNotCompleted => sender() ! NotCompletedTasks(state.notCompleted)
       case GetAllTask      => sender() ! AllTasks(state.all)
@@ -63,6 +66,7 @@ case object Print extends Command
 
 /**
  * Event for modify State of Actor
+ * expect to be persisted
  */
 sealed trait CommandEvent extends Any
 case class Register(taskTitle: TaskTitle) extends AnyVal with CommandEvent
@@ -79,9 +83,10 @@ case class NotCompletedTasks(value: Seq[Task]) extends AnyVal
 
 /**
  * State of Actor
+ *
  * @param taskList
  */
-case class State(taskList: Seq[Task] = Nil) {
+private case class State(taskList: Seq[Task] = Nil) {
   def all = taskList
 
   def notCompleted = taskList.filter { _.state == TaskState.Todo }
