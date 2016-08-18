@@ -22,9 +22,9 @@ class TaskPersistentActor extends PersistentActor with ActorLogging {
   private def updateState(event: CommandEvent): Unit = {
     persist(event) {
       case Register(title) => state = state + Task(title)
-      case Complete(task)  => state = state complete task
-      case Undo(task)      => state = state undo task
-      case Archive(task)   => state = state - task
+      case Complete(task)  => state = state complete Task(task)
+      case Undo(task)      => state = state undo Task(task)
+      case Archive(task)   => state = state - Task(task)
       case _               => sys.error("Invalid Message")
     }
   }
@@ -70,9 +70,9 @@ case object Print extends Command
  */
 sealed trait CommandEvent extends Any
 case class Register(taskTitle: TaskTitle) extends AnyVal with CommandEvent
-case class Complete(task: Task) extends AnyVal with CommandEvent
-case class Undo(task: Task) extends AnyVal with CommandEvent
-case class Archive(task: Task) extends AnyVal with CommandEvent
+case class Complete(taskTitle: TaskTitle) extends AnyVal with CommandEvent
+case class Undo(taskTitle: TaskTitle) extends AnyVal with CommandEvent
+case class Archive(taskTitle: TaskTitle) extends AnyVal with CommandEvent
 
 sealed trait QueryEvent
 case object GetNotCompleted extends QueryEvent
