@@ -1,6 +1,6 @@
 name := """akka-actor-persistence-ex"""
 
-version := "2.4.4"
+version := "1.0.0"
 
 scalaVersion := "2.11.8"
 
@@ -8,6 +8,7 @@ val akkaVersion = "2.4.9-RC2"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-remote" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence" % akkaVersion,
   "com.typesafe.akka" %% "akka-persistence-query-experimental" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
@@ -21,3 +22,6 @@ libraryDependencies ++= Seq(
 )
 
 licenses := Seq(("CC0", url("http://creativecommons.org/publicdomain/zero/1.0")))
+
+fork := true
+connectInput in run := true
