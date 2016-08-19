@@ -23,10 +23,10 @@ object TaskApp extends App {
       taskActor ! Register(titles(0))
       taskActor ! Register(titles(1))
       taskActor ! Register(titles(2))
-      taskActor ! Complete(titles(1))
+      //      taskActor ! Complete(titles(1))
       //  taskActor ! Complete(Task(titles(2)))
       //  taskActor ! Undo(Task(titles(1)))
-      taskActor ! Archive(titles(0))
+      //      taskActor ! Archive(titles(0))
       taskActor ! GetNotCompleted
       taskActor ! GetAllTask
 
