@@ -2,10 +2,10 @@ package net.petitviolet.ex.persistence.task.web.controller
 
 import akka.actor.ActorRef
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{ StandardRoute, Route }
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model.TaskJsonSupport._
-import net.petitviolet.ex.persistence.task.model.TaskTitle
+import net.petitviolet.ex.persistence.task.model.{ TaskState, TaskId, Task, TaskTitle }
 import net.petitviolet.ex.persistence.task.web.{ MixInAppContext, UsesAppContext }
 import spray.json.{ DefaultJsonProtocol, RootJsonFormat }
 
@@ -37,11 +37,18 @@ abstract class GetTaskController(taskActor: ActorRef) extends JsonController wit
   import appContext._
 
   override val route: Route = (path("task" / "all") & get) {
-    val promise = Promise[AllTasks]
-    implicit val replyTo = system.actorOf(ResponseActor.props(promise))
+    parameter('status.as[Int]?).as { statusOpt: Option[Int] =>
+      statusOpt map TaskState.from
+    } { taskStateOpt: Option[TaskState] =>
+      val promise = Promise[TaskList]
+      implicit val replyTo = system.actorOf(ResponseActor.props(promise))
+      val event: QueryEvent = taskStateOpt map QueryEvent.byState getOrElse GetAllTask
 
-    taskActor ! GetAllTask
-    completeFuture(promise.future.map { _.value })
+      taskActor ! event
+      completeFuture(promise.future.map {
+        _.value
+      })
+    }
   }
 
 }
