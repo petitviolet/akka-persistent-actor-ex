@@ -2,6 +2,7 @@ package net.petitviolet.ex.persistence.task.actor
 
 import akka.actor.{ ActorLogging, Props }
 import akka.persistence.{ PersistentActor, SnapshotOffer }
+import net.petitviolet.ex.persistence.task.model.TaskState.{ Todo, Completed }
 import net.petitviolet.ex.persistence.task.model._
 
 object TaskPersistentActor {
@@ -21,10 +22,10 @@ class TaskPersistentActor extends PersistentActor with ActorLogging {
    */
   private def updateState(event: CommandEvent): Unit = {
     persist(event) {
-      case Register(title) => state = state + Task(title)
-      case Complete(task)  => state = state complete Task(task)
-      case Undo(task)      => state = state undo Task(task)
-      case Archive(task)   => state = state - Task(task)
+      case Register(title) => state = state + Task(TaskId.create, title)
+      case Complete(task)  => state = state complete task
+      case Undo(task)      => state = state undo task
+      case Archive(task)   => state = state - task
       case _               => sys.error("Invalid Message")
     }
   }
@@ -38,6 +39,7 @@ class TaskPersistentActor extends PersistentActor with ActorLogging {
   private def executeQuery(event: QueryEvent): Unit = {
     if (recoveryRunning) log.info("now recovering")
     event match {
+      case GetCompleted    => sender() ! CompletedTasks(state.completed)
       case GetNotCompleted => sender() ! NotCompletedTasks(state.notCompleted)
       case GetAllTask      => sender() ! AllTasks(state.all)
     }
@@ -69,17 +71,29 @@ case object Print extends Command
  * expect to be persisted
  */
 sealed trait CommandEvent extends Any
-case class Register(taskTitle: TaskTitle) extends AnyVal with CommandEvent
-case class Complete(taskTitle: TaskTitle) extends AnyVal with CommandEvent
-case class Undo(taskTitle: TaskTitle) extends AnyVal with CommandEvent
-case class Archive(taskTitle: TaskTitle) extends AnyVal with CommandEvent
+case class Register(taskTitle: TaskTitle) extends CommandEvent
+case class Complete(taskId: TaskId) extends CommandEvent
+case class Undo(taskId: TaskId) extends CommandEvent
+case class Archive(taskId: TaskId) extends CommandEvent
 
 sealed trait QueryEvent
 case object GetNotCompleted extends QueryEvent
+case object GetCompleted extends QueryEvent
 case object GetAllTask extends QueryEvent
+object QueryEvent {
+  def byState(taskState: TaskState): QueryEvent =
+    taskState match {
+      case Completed => GetCompleted
+      case Todo      => GetNotCompleted
+    }
+}
 
-case class AllTasks(value: Seq[Task]) extends AnyVal
-case class NotCompletedTasks(value: Seq[Task]) extends AnyVal
+sealed trait TaskList extends Any {
+  val value: Seq[Task]
+}
+case class AllTasks(value: Seq[Task]) extends AnyVal with TaskList
+case class NotCompletedTasks(value: Seq[Task]) extends AnyVal with TaskList
+case class CompletedTasks(value: Seq[Task]) extends AnyVal with TaskList
 
 /**
  * State of Actor
@@ -95,15 +109,15 @@ private case class State(taskList: Seq[Task] = Nil) {
 
   def +(task: Task): State = copy(task +: taskList)
 
-  def -(task: Task): State = copy(taskList.filterNot(_ == task))
+  def -(taskId: TaskId): State = copy(taskList.filterNot(_ == taskId))
 
-  def complete(task: Task): State = modifyState(_.copy(state = TaskState.Completed))(task)
+  def complete(taskId: TaskId): State = modifyState(_.copy(state = TaskState.Completed))(taskId)
 
-  def undo(task: Task): State = modifyState(_.copy(state = TaskState.Todo))(task)
+  def undo(taskId: TaskId): State = modifyState(_.copy(state = TaskState.Todo))(taskId)
 
-  private def modifyState(f: => Task => Task)(task: Task) =
+  private def modifyState(f: => Task => Task)(taskId: TaskId) =
     copy(taskList.map { t =>
-      if (t == task) f(t)
+      if (t.id == taskId) f(t)
       else t
     })
 }
