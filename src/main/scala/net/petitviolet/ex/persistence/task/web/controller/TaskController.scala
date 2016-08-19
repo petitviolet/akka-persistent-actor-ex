@@ -58,22 +58,42 @@ abstract class CommandTaskController(taskActor: ActorRef) extends JsonController
   import ResultJsonSupport._
 
   // should separate each Controller...
-  private val commandMap: Map[String, (TaskTitle => CommandEvent)] = Map(
-    "new" -> Register.apply,
+  private val postMap: Map[String, (TaskTitle => CommandEvent)] = Map(
+    "new" -> Register.apply
+  )
+  private val putMap: Map[String, (TaskId => CommandEvent)] = Map(
     "done" -> Complete.apply,
     "undo" -> Undo.apply,
     "delete" -> Archive.apply
   )
 
-  private val _routes = commandMap map {
-    case (_path, constructor) =>
-      entity(as[TaskTitleDTO]) { dto =>
-        (path(_path) & post) { // should use RESTful HTTP-method...
-          val event: CommandEvent = constructor(TaskTitle(dto.title))
-          taskActor ! event
-          complete(Result("ok"))
+  private val _routes: Iterable[Route] = {
+    val response: CommandEvent => StandardRoute = event => {
+      taskActor ! event
+      complete(Result("ok"))
+    }
+
+    val postRoutes = postMap map {
+      case (_path, constructor) =>
+        entity(as[TaskTitleDTO]) { dto =>
+          (path(_path) & post) {
+            val event: CommandEvent = constructor(TaskTitle(dto.title))
+            response(event)
+          }
         }
-      }
+    }
+
+    val putRoutes = putMap map {
+      case (_path, constructor) =>
+        entity(as[TaskIdDTO]) { dto =>
+          (path(_path) & put) {
+            val event: CommandEvent = constructor(TaskId(dto.id))
+            response(event)
+          }
+        }
+    }
+
+    postRoutes ++ putRoutes
   }
 
   override val route: Route = pathPrefix("task") {
@@ -82,11 +102,13 @@ abstract class CommandTaskController(taskActor: ActorRef) extends JsonController
 
 }
 
+private case class TaskIdDTO(id: String)
 private case class TaskTitleDTO(title: String)
 private case class Result(result: String)
 
 private object RegisterTaskDTOJsonSupport extends DefaultJsonProtocol {
-  implicit val registerTaskFormat: RootJsonFormat[TaskTitleDTO] = jsonFormat1(TaskTitleDTO)
+  implicit val taskTitleFormat: RootJsonFormat[TaskTitleDTO] = jsonFormat1(TaskTitleDTO)
+  implicit val taskFormat: RootJsonFormat[TaskIdDTO] = jsonFormat1(TaskIdDTO)
 }
 
 private object ResultJsonSupport extends DefaultJsonProtocol {
