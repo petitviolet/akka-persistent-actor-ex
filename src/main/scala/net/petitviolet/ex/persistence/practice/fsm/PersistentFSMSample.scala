@@ -32,7 +32,7 @@ private object ForFSM {
   case object Purchased extends ShoppingState
 }
 
-private class Customer(implicit val domainEventClassTag: ClassTag[ShoppingEvent])
+private class CustomerFSMActor(implicit val domainEventClassTag: ClassTag[ShoppingEvent])
   extends PersistentFSM[ShoppingState, ShoppingData, ShoppingEvent] {
 
   override def persistenceId: String = "example-persistence-FSM"
@@ -117,10 +117,10 @@ private class Customer(implicit val domainEventClassTag: ClassTag[ShoppingEvent]
 
 }
 
-private object PersistFSMApp extends App {
+private object PersistentFSMSampleApp extends App {
 
-  implicit val system = ActorSystem("PersistFSMApp")
-  val actor = system.actorOf(Props(classOf[Customer], classTag[ShoppingEvent]))
+  implicit val system = ActorSystem("PersistentFSMSampleApp")
+  val actor = system.actorOf(Props(classOf[CustomerFSMActor], classTag[ShoppingEvent]))
 
   val milk = Item("milk", 100)
   val meat = Item("meat", 1000)
