@@ -6,6 +6,7 @@ import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model._
+import net.petitviolet.ex.persistence.task.model.support.KryoSerializerInitializer
 import net.petitviolet.ex.persistence.task.web.MixInAppContext
 import net.petitviolet.ex.persistence.task.web.controller.TaskController
 
@@ -22,9 +23,9 @@ object TaskApp extends App {
     private val titles = r to r + 3 map { s => TaskTitle(s"todo_$s") }
 
     private def execute() = {
-      taskActor ! Register(titles(0))
-      taskActor ! Register(titles(1))
-      taskActor ! Register(titles(2))
+      //      taskActor ! Register(titles(0))
+      //      taskActor ! Register(titles(1))
+      //      taskActor ! Register(titles(2))
       //      taskActor ! Complete(titles(1))
       //  taskActor ! Complete(Task(titles(2)))
       //  taskActor ! Undo(Task(titles(1)))
@@ -58,6 +59,7 @@ private object TaskWebApp extends App with MixInAppContext {
   import appContext._
 
   val config = ConfigFactory.load()
+  //  MyKryoSerializer.init()
 
   val route = new TaskController().route
   val (host, port) = (config.getString("http.host"), config.getInt("http.port"))

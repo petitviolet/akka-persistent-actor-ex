@@ -22,11 +22,11 @@ class TaskPersistentActor extends PersistentActor with ActorLogging {
    */
   private def updateState(event: CommandEvent): Unit = {
     persist(event) {
-      case Register(title) => state = state + Task(TaskId.create, title)
-      case Complete(task)  => state = state complete task
-      case Undo(task)      => state = state undo task
-      case Archive(task)   => state = state - task
-      case _               => sys.error("Invalid Message")
+      case Register(task) => state = state + task
+      case Complete(task) => state = state complete task
+      case Undo(task)     => state = state undo task
+      case Archive(task)  => state = state - task
+      case _              => sys.error("Invalid Message")
     }
   }
 
@@ -71,7 +71,7 @@ case object Print extends Command
  * expect to be persisted
  */
 sealed trait CommandEvent extends Any
-case class Register(taskTitle: TaskTitle) extends CommandEvent
+case class Register(task: Task) extends CommandEvent
 case class Complete(taskId: TaskId) extends CommandEvent
 case class Undo(taskId: TaskId) extends CommandEvent
 case class Archive(taskId: TaskId) extends CommandEvent
