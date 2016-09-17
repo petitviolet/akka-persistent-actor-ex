@@ -22,7 +22,7 @@ trait MixInAppContext {
 }
 
 private object ContextImpl extends AppContext {
-  implicit val system = ActorSystem()
+  implicit val system = ActorSystem("petitviolet-persistence-task-ex")
   implicit val executor = system.dispatcher
   implicit val materializer = ActorMaterializer()
 }

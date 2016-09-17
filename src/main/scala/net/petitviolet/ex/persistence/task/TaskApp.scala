@@ -72,9 +72,8 @@ private object TaskWebApp extends App with MixInAppContext {
 
   println("start")
 
-  //  Await.ready(binding, Duration.Inf)
   val input = StdIn.readLine()
 
-  println("end")
   binding.flatMap(_.unbind()).onComplete(_ => shutdown())
+  println("end")
 }

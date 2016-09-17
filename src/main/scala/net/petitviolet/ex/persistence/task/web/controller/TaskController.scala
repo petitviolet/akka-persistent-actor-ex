@@ -59,7 +59,7 @@ abstract class CommandTaskController(taskActor: ActorRef) extends JsonController
 
   // should separate each Controller...
   private val postMap: Map[String, (TaskTitle => CommandEvent)] = Map(
-    "new" -> { title => Register(Task(TaskId.create, title)) }
+    "new" -> { title => Register.apply(Task(TaskId.create, title)) }
   )
   private val putMap: Map[String, (TaskId => CommandEvent)] = Map(
     "done" -> Complete.apply,
