@@ -4,7 +4,7 @@ import java.util.UUID
 
 import spray.json._
 
-import scala.util.Random
+import scala.language.reflectiveCalls
 
 case class Task(id: TaskId, title: TaskTitle, state: TaskState = TaskState.Todo)
 
@@ -44,3 +44,4 @@ object TaskJsonSupport extends DefaultJsonProtocol {
       }
   }
 }
+

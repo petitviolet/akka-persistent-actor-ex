@@ -82,6 +82,8 @@ private class CustomerFSMActor(implicit val domainEventClassTag: ClassTag[Shoppi
       }
   }
 
+  context.unbecome()
+
   when(Shopping) {
     case Event(addItem: AddItem, _) =>
       // just add an item

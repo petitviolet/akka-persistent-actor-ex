@@ -9,6 +9,8 @@ import net.petitviolet.ex.persistence.task.model._
 import net.petitviolet.ex.persistence.task.web.MixInAppContext
 import net.petitviolet.ex.persistence.task.web.controller.TaskController
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.io.StdIn
 import scala.util.Random
 
@@ -68,6 +70,7 @@ private object TaskWebApp extends App with MixInAppContext {
 
   println("start")
 
+  //  Await.ready(binding, Duration.Inf)
   val input = StdIn.readLine()
 
   println("end")
