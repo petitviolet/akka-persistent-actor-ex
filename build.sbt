@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
   "com.typesafe.akka" %% "akka-http-spray-json-experimental" % akkaVersion,
 
-//  "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.1",
+  "com.github.romix.akka" %% "akka-kryo-serialization" % "0.4.1",
 //  "com.twitter" %% "chill" % "0.8.0",
   "com.twitter" %% "chill-bijection" % "0.8.0",
   "com.twitter" %% "chill-akka" % "0.8.0",

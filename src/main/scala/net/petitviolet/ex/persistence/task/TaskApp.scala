@@ -59,7 +59,7 @@ private object TaskWebApp extends App with MixInAppContext {
   import appContext._
 
   val config = ConfigFactory.load()
-//  KryoSerializerInitializer.run()
+  //  KryoSerializerInitializer.run()
 
   val route = new TaskController().route
   val (host, port) = (config.getString("http.host"), config.getInt("http.port"))

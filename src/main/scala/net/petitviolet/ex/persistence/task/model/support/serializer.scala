@@ -2,7 +2,6 @@ package net.petitviolet.ex.persistence.task.model.support
 
 import com.esotericsoftware.kryo
 import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io._
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer
 import com.twitter.chill._
 import net.petitviolet.ex.persistence.task.actor._
@@ -13,23 +12,26 @@ import net.petitviolet.ex.persistence.task.model._
 import scala.collection.mutable.ListBuffer
 import scala.language.reflectiveCalls
 
+/**
+ * should define original serializer for class used at Akka-Persistence.
+ */
 class RegisterKryoSerializer extends KryoSerializerBase[Register] {
-  //  override def write(kryo: Kryo, output: Output, `object`: Register): Unit = kryo.writeObject(output, `object`) //defaultWrite(kryo, output, `object`)
+  override def write(kryo: Kryo, output: Output, `object`: Register): Unit = {
+    //    super.write(kryo, output, `object`)
+    output.writeString(`object`.task.id.value)
+    output.writeString(`object`.task.name.value)
+    output.writeInt(`object`.task.state.value)
+    output.writeBoolean(`object`.flag)
+  }
 
-  def read(kryo: Kryo, input: Input, `type`: Class[Register]): Register = {
-    //    println(s"input: $input")
-    //    println(s"inputStream: ${input.getInputStream}")
-    //    input.setInputStream(new ByteArrayInputStream())
-    //    println(s"inputStream: ${input.getInputStream}")
-    //    val str = input.readString()
-    //    //    val bytes = readFromBytes(kryo, input)
-    //    println(s"input => " + str)
-    //    Register(Task(TaskId("hogehoge"), TaskTitle("yeeeee")))
-    //        defaultRead(kryo, input, `type`)
-    val result = KryoInjection.invert(input.getBuffer) //.readObjectOrNull(input, `type`)
-    println(s"result: $result")
-    result.map(_.asInstanceOf[Register]).get
-    Register(Task(TaskId("hogehoge"), TaskTitle("yeeeee")))
+  override def read(kryo: Kryo, input: Input, `type`: Class[Register]): Register = {
+    val taskId = TaskId(input.readString)
+    val taskTitle = TaskTitle(input.readString)
+    val taskState = TaskState.from(input.readInt)
+    val flag = input.readBoolean()
+    val register = Register(Task(taskId, taskTitle, taskState), flag)
+    println(s"recover: $register")
+    register
   }
 
 }
@@ -37,11 +39,9 @@ class RegisterKryoSerializer extends KryoSerializerBase[Register] {
 abstract class KryoSerializerBase[T] extends kryo.Serializer[T](false, false) {
 
   def write(kryo: Kryo, output: Output, `object`: T): Unit = kryo.writeObject(output, `object`)
-  def defaultRead(kryo: Kryo, input: Input, `type`: Class[T]): T = kryo.readObject(input, `type`)
+  def read(kryo: Kryo, input: Input, `type`: Class[T]): T = kryo.readObject(input, `type`)
 
   protected def readFromBytes(kryo: Kryo, input: Input): Array[Byte] = {
-    val r = input.readBytes(9999)
-    input.setInputStream(new ByteBufferInputStream())
     val is = input.getInputStream
     val buf = ListBuffer[Byte]()
     var b = is.read()
@@ -53,7 +53,7 @@ abstract class KryoSerializerBase[T] extends kryo.Serializer[T](false, false) {
   }
 }
 
-object KryoSerializerInitializer {
+class KryoSerializerInitializer {
   def run() = {
     val instantiator = new ScalaKryoInstantiator
     val kryo = instantiator.newKryo()
