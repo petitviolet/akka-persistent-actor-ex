@@ -1,12 +1,10 @@
 package net.petitviolet.ex.persistence.task.model.support
 
-import java.io.{ InputStream, ByteArrayOutputStream }
-
 import com.esotericsoftware.kryo
-import com.esotericsoftware.kryo.{ io, Kryo }
+import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io._
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer
-import com.twitter.chill.KryoInjection
+import com.twitter.chill._
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model._
 
@@ -19,14 +17,19 @@ class RegisterKryoSerializer extends KryoSerializerBase[Register] {
   //  override def write(kryo: Kryo, output: Output, `object`: Register): Unit = kryo.writeObject(output, `object`) //defaultWrite(kryo, output, `object`)
 
   def read(kryo: Kryo, input: Input, `type`: Class[Register]): Register = {
-    val bytes = input.readBytes(4096)
-    //    val bytes = readFromBytes(kryo, input)
-    println(s"input => " + new String(bytes))
+    //    println(s"input: $input")
+    //    println(s"inputStream: ${input.getInputStream}")
+    //    input.setInputStream(new ByteArrayInputStream())
+    //    println(s"inputStream: ${input.getInputStream}")
+    //    val str = input.readString()
+    //    //    val bytes = readFromBytes(kryo, input)
+    //    println(s"input => " + str)
+    //    Register(Task(TaskId("hogehoge"), TaskTitle("yeeeee")))
+    //        defaultRead(kryo, input, `type`)
+    val result = KryoInjection.invert(input.getBuffer) //.readObjectOrNull(input, `type`)
+    println(s"result: $result")
+    result.map(_.asInstanceOf[Register]).get
     Register(Task(TaskId("hogehoge"), TaskTitle("yeeeee")))
-    //    defaultRead(kryo, input, `type`)
-    //    val result = KryoInjection.invert(input.getBuffer) //.readObjectOrNull(input, `type`)
-    //    println(s"result: $result")
-    //    result
   }
 
 }
@@ -50,7 +53,12 @@ abstract class KryoSerializerBase[T] extends kryo.Serializer[T](false, false) {
   }
 }
 
-class KryoSerializerInitializer {
+object KryoSerializerInitializer {
+  def run() = {
+    val instantiator = new ScalaKryoInstantiator
+    val kryo = instantiator.newKryo()
+    customize(kryo)
+  }
   def customize(kryo: Kryo) = {
     kryo.setDefaultSerializer(classOf[CompatibleFieldSerializer[Any]])
     kryo.addDefaultSerializer(classOf[Register], classOf[RegisterKryoSerializer])
