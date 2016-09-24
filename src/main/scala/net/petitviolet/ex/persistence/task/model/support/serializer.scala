@@ -1,22 +1,20 @@
 package net.petitviolet.ex.persistence.task.model.support
 
-import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
-
-import akka.serialization.Serializer
 import com.esotericsoftware.kryo
 import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io.Output
+import com.esotericsoftware.kryo.io.{ Input, Output }
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer
-import com.twitter.chill._
+import com.twitter.chill.KryoInjection
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model._
-
-//import com.twitter.chill.KryoInjection
 
 import scala.collection.mutable.ListBuffer
 import scala.language.reflectiveCalls
 
-class RegisterKryoSerializer extends Serializer {
+/**
+ * serializer for [[Register]] using twitter/chill
+ */
+class _RegisterKryoSerializer extends akka.serialization.Serializer {
   private val CLAZZ = classOf[Register]
 
   override def identifier: Int = 1000
@@ -25,12 +23,21 @@ class RegisterKryoSerializer extends Serializer {
 
   override def toBinary(o: AnyRef): Array[Byte] = {
     KryoInjection.apply(o)
+    // throw `buffer underflow` exception...
+    //    val kryo = new Kryo()
+    //    val baos = new ByteArrayOutputStream()
+    //    kryo.writeObject(new Output(baos), o)
+    //
+    //    baos.toByteArray
   }
 
   override def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]): AnyRef = {
     manifest match {
       case Some(CLAZZ) =>
         KryoInjection.invert(bytes).get
+      //        val kryo = new Kryo()
+      //        val input = new Input(new ByteArrayInputStream(bytes))
+      //        kryo.readObject(input, CLAZZ)
       case _ => sys.error(s"unknown manifest: $manifest")
     }
   }
@@ -39,7 +46,7 @@ class RegisterKryoSerializer extends Serializer {
 /**
  * should define original serializer for class used at Akka-Persistence.
  */
-class iRegisterKryoSerializer extends KryoSerializerBase[Register] {
+class RegisterKryoSerializer extends KryoSerializerBase[Register] {
   override def write(kryo: Kryo, output: Output, `object`: Register): Unit = {
     //    super.write(kryo, output, `object`)
     output.writeString(`object`.task.id.value)

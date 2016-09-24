@@ -71,7 +71,7 @@ case object Print extends Command
  * expect to be persisted
  */
 sealed trait CommandEvent extends Any
-case class Register(task: Task) extends CommandEvent
+case class Register(task: Task) extends CommandEvent with Serializable
 case class Complete(taskId: TaskId) extends CommandEvent
 case class Undo(taskId: TaskId) extends CommandEvent
 case class Archive(taskId: TaskId) extends CommandEvent
