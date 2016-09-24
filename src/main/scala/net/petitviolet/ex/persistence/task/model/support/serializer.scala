@@ -1,7 +1,11 @@
 package net.petitviolet.ex.persistence.task.model.support
 
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
+
+import akka.serialization.Serializer
 import com.esotericsoftware.kryo
 import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.io.Output
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer
 import com.twitter.chill._
 import net.petitviolet.ex.persistence.task.actor._
@@ -12,26 +16,42 @@ import net.petitviolet.ex.persistence.task.model._
 import scala.collection.mutable.ListBuffer
 import scala.language.reflectiveCalls
 
+class RegisterKryoSerializer extends Serializer {
+  private val CLAZZ = classOf[Register]
+
+  override def identifier: Int = 1000
+
+  override def includeManifest: Boolean = true
+
+  override def toBinary(o: AnyRef): Array[Byte] = {
+    KryoInjection.apply(o)
+  }
+
+  override def fromBinary(bytes: Array[Byte], manifest: Option[Class[_]]): AnyRef = {
+    manifest match {
+      case Some(CLAZZ) =>
+        KryoInjection.invert(bytes).get
+      case _ => sys.error(s"unknown manifest: $manifest")
+    }
+  }
+}
+
 /**
  * should define original serializer for class used at Akka-Persistence.
  */
-class RegisterKryoSerializer extends KryoSerializerBase[Register] {
+class iRegisterKryoSerializer extends KryoSerializerBase[Register] {
   override def write(kryo: Kryo, output: Output, `object`: Register): Unit = {
     //    super.write(kryo, output, `object`)
     output.writeString(`object`.task.id.value)
     output.writeString(`object`.task.name.value)
     output.writeInt(`object`.task.state.value)
-    output.writeBoolean(`object`.flag)
   }
 
   override def read(kryo: Kryo, input: Input, `type`: Class[Register]): Register = {
     val taskId = TaskId(input.readString)
     val taskTitle = TaskTitle(input.readString)
     val taskState = TaskState.from(input.readInt)
-    val flag = input.readBoolean()
-    val register = Register(Task(taskId, taskTitle, taskState), flag)
-    println(s"recover: $register")
-    register
+    Register(Task(taskId, taskTitle, taskState))
   }
 
 }
@@ -53,15 +73,10 @@ abstract class KryoSerializerBase[T] extends kryo.Serializer[T](false, false) {
   }
 }
 
-class KryoSerializerInitializer {
-  def run() = {
-    val instantiator = new ScalaKryoInstantiator
-    val kryo = instantiator.newKryo()
-    customize(kryo)
-  }
+class CustomKryoSerializerInitializer {
   def customize(kryo: Kryo) = {
     kryo.setDefaultSerializer(classOf[CompatibleFieldSerializer[Any]])
-    kryo.addDefaultSerializer(classOf[Register], classOf[RegisterKryoSerializer])
+    //    kryo.addDefaultSerializer(classOf[Register], classOf[RegisterKryoSerializer])
     println(s"after - ${kryo.getSerializer(classOf[Register])}")
   }
 }

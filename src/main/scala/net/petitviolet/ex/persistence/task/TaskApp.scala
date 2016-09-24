@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import com.typesafe.config.ConfigFactory
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model._
-import net.petitviolet.ex.persistence.task.model.support.KryoSerializerInitializer
+import net.petitviolet.ex.persistence.task.model.support.CustomKryoSerializerInitializer
 import net.petitviolet.ex.persistence.task.web.MixInAppContext
 import net.petitviolet.ex.persistence.task.web.controller.TaskController
 
