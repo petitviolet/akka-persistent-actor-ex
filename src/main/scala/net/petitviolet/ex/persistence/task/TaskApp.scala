@@ -1,17 +1,20 @@
 package net.petitviolet.ex.persistence.task
 
-import akka.actor.{ Actor, ActorRef, ActorSystem, Props }
+import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
+import akka.stream.{ ActorMaterializer, ClosedShape }
+import akka.stream.actor.ActorSubscriberMessage.{ OnComplete, OnNext }
+import akka.stream.actor.{ OneByOneRequestStrategy, RequestStrategy, ActorSubscriber, ActorPublisher }
+import akka.{ Done, NotUsed }
 import com.typesafe.config.ConfigFactory
 import net.petitviolet.ex.persistence.task.actor._
 import net.petitviolet.ex.persistence.task.model._
-import net.petitviolet.ex.persistence.task.model.support.CustomKryoSerializerInitializer
 import net.petitviolet.ex.persistence.task.web.MixInAppContext
 import net.petitviolet.ex.persistence.task.web.controller.TaskController
+import org.reactivestreams.Publisher
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.Future
 import scala.io.StdIn
 import scala.util.Random
 
@@ -76,4 +79,73 @@ private object TaskWebApp extends App with MixInAppContext {
 
   binding.flatMap(_.unbind()).onComplete(_ => shutdown())
   println("end")
+}
+
+private object AkkaStreamPrac extends App {
+  import akka.stream.scaladsl._
+  implicit val system = ActorSystem("akka-stream-prac")
+  implicit val executor = system.dispatcher
+  implicit val materializer = ActorMaterializer()
+
+  case class Reply(value: String) extends AnyVal
+  case object Finish
+
+  class NiceActor extends ActorPublisher[Reply] {
+    override def receive: Actor.Receive = {
+      case s: String =>
+        onNext(Reply(s"Nice: $s"))
+      case i: Int =>
+        onNext(Reply(s"Great: ${i * 100}"))
+      case Finish =>
+        onComplete()
+    }
+  }
+
+  class PrintActor extends ActorSubscriber {
+    override protected def requestStrategy: RequestStrategy = OneByOneRequestStrategy
+
+    override def receive: Actor.Receive = {
+      case OnNext(any) => println(s"subscribed: $any")
+      case OnComplete  => println(s"finish process!")
+    }
+  }
+
+  val actorRef = system.actorOf(Props[NiceActor])
+
+  val publisher: Publisher[Reply] = ActorPublisher(actorRef)
+
+  val source: Source[Reply, NotUsed] = Source.fromPublisher(publisher)
+
+  val flow: Flow[Reply, Reply, NotUsed] = Flow[Reply].map { r => r.copy(value = s"(Mapped: ${r.value})") }
+
+  val accumulater: Flow[Reply, String, NotUsed] = Flow[Reply].fold("init") { (acc, rep) => s"$acc :: ${rep.value}" }
+
+  val printActor = system.actorOf(Props[PrintActor])
+  val sink: Sink[String, NotUsed] = Sink.fromSubscriber[String](ActorSubscriber[String](printActor))
+
+  //  val graph: RunnableGraph[NotUsed] = RunnableGraph.fromGraph(source via flow via accumulater to sink)
+  val graph: RunnableGraph[NotUsed] = RunnableGraph.fromGraph {
+    GraphDSL.create() { implicit builder =>
+      import GraphDSL.Implicits._
+      source ~> flow ~> accumulater ~> sink
+      ClosedShape
+    }
+  }
+
+  graph.run
+
+  // wait preparing graph
+  Thread.sleep(100L)
+
+  actorRef ! "hello!"
+
+  actorRef ! 100
+
+  actorRef ! "good"
+
+  actorRef ! Finish
+
+  StdIn.readLine()
+
+  system.terminate()
 }
