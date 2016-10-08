@@ -6,7 +6,7 @@ import spray.json._
 
 import scala.language.reflectiveCalls
 
-case class Task(id: TaskId, name: TaskTitle, state: TaskState = TaskState.Todo)
+case class Task(id: TaskId, title: TaskTitle, state: TaskState = TaskState.Todo)
 
 case class TaskId(value: String) extends AnyVal
 case class TaskTitle(value: String) extends AnyVal
@@ -22,7 +22,7 @@ object TaskState {
   private val values = Completed :: Todo :: Nil
 
   //  def from(n: Int): TaskState = values.find(_.value == n).get
-  def from: Int => TaskState = n => values.find(_.value == n).get
+  val from: Int => TaskState = n => values.find(_.value == n).get
 
   case object Completed extends TaskState(1)
   case object Todo extends TaskState(0)
@@ -32,7 +32,7 @@ object TaskJsonSupport extends DefaultJsonProtocol {
   implicit val taskJsonFormat: RootJsonFormat[Task] = new RootJsonFormat[Task] {
     override def write(obj: Task): JsValue = JsObject(
       "id" -> JsString(obj.id.value),
-      "title" -> JsString(obj.name.value),
+      "title" -> JsString(obj.title.value),
       "state" -> JsNumber(obj.state.value)
     )
 
